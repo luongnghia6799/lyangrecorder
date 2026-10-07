@@ -81,23 +81,55 @@ export async function exportRenderedVideo(
   renderVideo.style.zIndex = '-9999';
   document.body.appendChild(renderVideo);
 
-  // Determine supported mime type
-  const candidateMimes = [
+  // Determine supported mime type based on user-selected format
+  const mp4Mimes = [
+    'video/mp4;codecs=avc1.4d401f,mp4a.40.2',
+    'video/mp4;codecs=avc1',
+    'video/mp4',
+  ];
+  const webmMimes = [
     'video/webm;codecs=vp9,opus',
     'video/webm;codecs=vp8,opus',
     'video/webm',
-    'video/mp4;codecs=avc1',
-    'video/mp4',
   ];
 
   let selectedMime = 'video/webm';
   let targetExtension: 'mp4' | 'webm' = 'webm';
 
-  for (const mime of candidateMimes) {
-    if (MediaRecorder.isTypeSupported(mime)) {
-      selectedMime = mime;
-      targetExtension = mime.startsWith('video/mp4') ? 'mp4' : 'webm';
-      break;
+  if (exportSettings.format === 'mp4') {
+    for (const mime of mp4Mimes) {
+      if (MediaRecorder.isTypeSupported(mime)) {
+        selectedMime = mime;
+        targetExtension = 'mp4';
+        break;
+      }
+    }
+    // If browser doesn't support MP4 MediaRecorder, fallback to WebM
+    if (targetExtension !== 'mp4') {
+      for (const mime of webmMimes) {
+        if (MediaRecorder.isTypeSupported(mime)) {
+          selectedMime = mime;
+          targetExtension = 'webm';
+          break;
+        }
+      }
+    }
+  } else {
+    for (const mime of webmMimes) {
+      if (MediaRecorder.isTypeSupported(mime)) {
+        selectedMime = mime;
+        targetExtension = 'webm';
+        break;
+      }
+    }
+    if (targetExtension !== 'webm') {
+      for (const mime of mp4Mimes) {
+        if (MediaRecorder.isTypeSupported(mime)) {
+          selectedMime = mime;
+          targetExtension = 'mp4';
+          break;
+        }
+      }
     }
   }
 
