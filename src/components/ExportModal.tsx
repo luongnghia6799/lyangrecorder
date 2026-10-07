@@ -194,15 +194,25 @@ export const ExportModal: React.FC<ExportModalProps> = ({
         </div>
 
         {downloadUrl ? (
-          <div className="text-center py-4 space-y-4 animate-fade-in">
-            <div className="w-20 h-20 rounded-full bg-[var(--accent-light)] text-[var(--accent-primary)] mx-auto flex items-center justify-center border-2 border-[var(--border-inner)] shadow-md">
-              <CheckCircle2 size={44} className="text-[var(--accent-primary)]" />
+          <div className="text-center py-2 space-y-4 animate-fade-in">
+            {/* Embedded Video Preview Player */}
+            <div className="relative rounded-2xl overflow-hidden border-2 border-[var(--border-inner)] bg-zinc-950 shadow-lg">
+              <video
+                src={downloadUrl}
+                controls
+                autoPlay
+                playsInline
+                className="w-full max-h-60 rounded-xl object-contain mx-auto"
+              />
             </div>
 
             <div className="space-y-1">
-              <h3 className="text-xl font-bold text-[var(--text-main)]">Video Đã Sẵn Sàng!</h3>
+              <div className="flex items-center justify-center gap-2 text-[var(--accent-primary)] font-bold text-sm">
+                <CheckCircle2 size={18} />
+                <span>Xuất video thành công ({exportSettings.resolution.toUpperCase()} {exportSettings.fps} FPS)</span>
+              </div>
               <p className="text-xs text-[var(--text-muted)] font-medium">
-                Render hoàn tất ở chuẩn {exportSettings.resolution.toUpperCase()} {exportSettings.fps} FPS.
+                Bạn có thể xem trước video ở trên hoặc bấm nút bên dưới để lưu file về máy
               </p>
             </div>
 
@@ -219,7 +229,7 @@ export const ExportModal: React.FC<ExportModalProps> = ({
               className="inline-flex items-center justify-center gap-2.5 w-full py-4 rounded-full bg-[var(--accent-primary)] hover:bg-[var(--accent-primary-hover)] text-[var(--accent-primary-text)] font-extrabold text-sm shadow-lg transition-all duration-200 active:scale-95 cursor-pointer disabled:opacity-50"
             >
               <Download size={18} />
-              <span>{isSaving ? 'Đang mở hộp thoại lưu...' : 'Lưu file Video về máy (Chọn thư mục)'}</span>
+              <span>{isSaving ? 'Đang mở hộp thoại lưu...' : `Lưu file Video .${exportedExt.toUpperCase()} về máy`}</span>
             </button>
 
             <button

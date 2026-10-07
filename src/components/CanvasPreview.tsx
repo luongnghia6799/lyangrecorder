@@ -188,6 +188,7 @@ export const CanvasPreview: React.FC<CanvasPreviewProps> = ({
         if (isCancelled) return;
         if (video && !video.paused) {
           drawFrame(video.currentTime);
+          onTimeUpdateRef.current(video.currentTime);
           rvfcId = (video as any).requestVideoFrameCallback(onVideoFrame);
         }
       };
@@ -199,6 +200,7 @@ export const CanvasPreview: React.FC<CanvasPreviewProps> = ({
         if (timestamp - lastTime >= 16) {
           if (video && !video.paused) {
             drawFrame(video.currentTime);
+            onTimeUpdateRef.current(video.currentTime);
             lastTime = timestamp;
           }
         }
