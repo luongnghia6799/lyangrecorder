@@ -5,8 +5,10 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "tsc && vite build",
-    "build:app": "tsc && vite build && tauri build --bundles nsis",
+    "build": "node scripts/build-and-release.js",
+    "build:web": "tsc && vite build",
+    "build:app": "node scripts/build-and-release.js",
+    "release": "node scripts/build-and-release.js",
     "preview": "vite preview",
     "tauri": "tauri"
   },
