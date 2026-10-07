@@ -1,4 +1,3 @@
-import { Muxer as Mp4Muxer, ArrayBufferTarget } from 'mp4-muxer';
 import fixWebmDuration from 'fix-webm-duration';
 import { RecordingSession, VideoStyleSettings, ExportSettings } from '../types';
 import { renderFrame, getCanvasDimensions } from './renderer';
@@ -16,33 +15,6 @@ export interface ExportResult {
   extension: 'mp4' | 'webm';
 }
 
-// Helper to seek video element to a specific timestamp and wait until frame is fully decoded
-function seekVideoTo(video: HTMLVideoElement, timeSec: number): Promise<void> {
-  return new Promise((resolve) => {
-    if (Math.abs(video.currentTime - timeSec) < 0.005) {
-      resolve();
-      return;
-    }
-
-    let timeoutId: any = null;
-
-    const onSeeked = () => {
-      video.removeEventListener('seeked', onSeeked);
-      if (timeoutId) clearTimeout(timeoutId);
-      resolve();
-    };
-
-    video.addEventListener('seeked', onSeeked, { once: true });
-    video.currentTime = timeSec;
-
-    // Safety timeout in case seeked doesn't fire
-    timeoutId = setTimeout(() => {
-      video.removeEventListener('seeked', onSeeked);
-      resolve();
-    }, 150);
-  });
-}
-
 export async function exportRenderedVideo(
   sourceVideoElement: HTMLVideoElement | null,
   session: RecordingSession,
@@ -50,7 +22,8 @@ export async function exportRenderedVideo(
   exportSettings: ExportSettings,
   onProgress: (p: ExportProgress) => void
 ): Promise<ExportResult> {
-  if (!session.videoUrl && !sourceVideoElement) {
+  const videoSrc = session.videoUrl || (sourceVideoElement ? sourceVideoElement.src : '');
+  if (!videoSrc) {
     throw new Error('Không tìm thấy nguồn video để xuất.');
   }
 
@@ -68,7 +41,6 @@ export async function exportRenderedVideo(
     scaleFactor = 2160 / dims.height;
   }
 
-  // Ensure width and height are even numbers (required by H.264 encoders)
   const exportW = Math.round((dims.width * scaleFactor) / 2) * 2;
   const exportH = Math.round((dims.height * scaleFactor) / 2) * 2;
 
@@ -88,17 +60,17 @@ export async function exportRenderedVideo(
   offscreenCanvas.height = exportH;
   const offscreenCtx = offscreenCanvas.getContext('2d', { 
     alpha: false,
-    desynchronized: false,
-    willReadFrequently: false 
+    desynchronized: true,
   })!;
 
-  // 3. Create dedicated video element attached to DOM with non-zero dimensions to ensure hardware texture decode
+  // 3. Create dedicated video element attached to DOM with active dimensions so GPU decoder decodes every frame
   const renderVideo = document.createElement('video');
-  renderVideo.src = session.videoUrl || (sourceVideoElement ? sourceVideoElement.src : '');
+  renderVideo.src = videoSrc;
   renderVideo.crossOrigin = 'anonymous';
   renderVideo.playsInline = true;
   renderVideo.preload = 'auto';
-  renderVideo.muted = true;
+  renderVideo.muted = settings.muteAudio;
+  renderVideo.playbackRate = 1.0;
   renderVideo.style.position = 'fixed';
   renderVideo.style.bottom = '0px';
   renderVideo.style.right = '0px';
@@ -109,180 +81,75 @@ export async function exportRenderedVideo(
   renderVideo.style.zIndex = '-9999';
   document.body.appendChild(renderVideo);
 
-  // Wait for video element readiness
-  await new Promise<void>((resolve) => {
-    if (renderVideo.readyState >= 2) {
-      resolve();
-      return;
-    }
-    const onLoaded = () => {
-      resolve();
-    };
-    renderVideo.addEventListener('loadeddata', onLoaded, { once: true });
-    renderVideo.addEventListener('canplay', onLoaded, { once: true });
-    renderVideo.load();
-    setTimeout(resolve, 2000);
-  });
+  // Determine supported mime type
+  const candidateMimes = [
+    'video/webm;codecs=vp9,opus',
+    'video/webm;codecs=vp8,opus',
+    'video/webm',
+    'video/mp4;codecs=avc1',
+    'video/mp4',
+  ];
 
-  const cleanup = () => {
-    renderVideo.pause();
-    if (renderVideo.parentNode) {
-      renderVideo.parentNode.removeChild(renderVideo);
-    }
-  };
+  let selectedMime = 'video/webm';
+  let targetExtension: 'mp4' | 'webm' = 'webm';
 
-  const isWebCodecsSupported = typeof window !== 'undefined' && 'VideoEncoder' in window && 'VideoFrame' in window;
-
-  // METHOD 1: WebCodecs + mp4-muxer (Deterministic Frame-by-Frame, Ultra Crisp, 100% Valid MP4 with Faststart)
-  if (isWebCodecsSupported && exportSettings.format === 'mp4') {
-    try {
-      onProgress({
-        progress: 1,
-        currentFrame: 0,
-        totalFrames,
-        status: `Khởi tạo phần cứng H.264 GPU (${exportW}x${exportH} @ ${fps}FPS)...`,
-      });
-
-      const muxer = new Mp4Muxer({
-        target: new ArrayBufferTarget(),
-        video: {
-          codec: 'avc',
-          width: exportW,
-          height: exportH,
-        },
-        fastStart: 'in-memory',
-      });
-
-      let encodeError: any = null;
-      const videoEncoder = new VideoEncoder({
-        output: (chunk, meta) => muxer.addVideoChunk(chunk, meta),
-        error: (e) => {
-          console.error('VideoEncoder internal error:', e);
-          encodeError = e;
-        },
-      });
-
-      // Configure H.264 codec profile
-      await videoEncoder.configure({
-        codec: 'avc1.4d002a', // High Profile Level 4.2
-        width: exportW,
-        height: exportH,
-        bitrate: bitrate,
-        framerate: fps,
-        hardwareAcceleration: 'prefer-hardware',
-      });
-
-      // Frame-by-frame deterministic rendering
-      for (let frameIdx = 0; frameIdx < totalFrames; frameIdx++) {
-        if (encodeError) throw encodeError;
-
-        const timeSec = frameIdx / fps;
-        const timestampUs = Math.round(timeSec * 1_000_000);
-
-        // Seek video frame
-        await seekVideoTo(renderVideo, timeSec);
-
-        // Render Studio visual composition
-        renderFrame(
-          offscreenCtx,
-          renderVideo,
-          session,
-          settings,
-          timeSec,
-          exportW,
-          exportH
-        );
-
-        // Create VideoFrame from canvas and pass to hardware encoder
-        const frame = new VideoFrame(offscreenCanvas, { timestamp: timestampUs });
-        const isKeyFrame = frameIdx % (fps * 2) === 0; // Keyframe every 2 seconds
-        videoEncoder.encode(frame, { keyFrame: isKeyFrame });
-        frame.close();
-
-        // Report smooth progress
-        const pct = Math.min(99, Math.round(((frameIdx + 1) / totalFrames) * 100));
-        if (frameIdx % 5 === 0 || frameIdx === totalFrames - 1) {
-          onProgress({
-            progress: pct,
-            currentFrame: frameIdx + 1,
-            totalFrames,
-            status: `Đang render từng khung hình (${pct}%) • ${timeSec.toFixed(1)}s / ${totalDuration.toFixed(1)}s`,
-          });
-          // Yield to UI event loop
-          await new Promise((r) => setTimeout(r, 0));
-        }
-      }
-
-      onProgress({
-        progress: 99,
-        currentFrame: totalFrames,
-        totalFrames,
-        status: 'Đang đóng gói file MP4 FastStart...',
-      });
-
-      await videoEncoder.flush();
-      videoEncoder.close();
-      muxer.finalize();
-
-      cleanup();
-
-      const mp4Blob = new Blob([muxer.target.buffer], { type: 'video/mp4' });
-
-      onProgress({
-        progress: 100,
-        currentFrame: totalFrames,
-        totalFrames,
-        status: 'Xuất video hoàn tất 100%! Sẵn sàng tải về 🎉',
-      });
-
-      return {
-        blob: mp4Blob,
-        mimeType: 'video/mp4',
-        extension: 'mp4',
-      };
-    } catch (webCodecsErr) {
-      console.warn('WebCodecs encoder failed, falling back to MediaRecorder pipeline:', webCodecsErr);
+  for (const mime of candidateMimes) {
+    if (MediaRecorder.isTypeSupported(mime)) {
+      selectedMime = mime;
+      targetExtension = mime.startsWith('video/mp4') ? 'mp4' : 'webm';
+      break;
     }
   }
 
-  // METHOD 2: MediaRecorder fallback with fixWebmDuration
+  const stream = offscreenCanvas.captureStream(fps);
+
+  // Hook up audio track if video has sound
+  let audioContext: AudioContext | null = null;
+  if (!settings.muteAudio) {
+    try {
+      const AudioCtx = window.AudioContext || (window as any).webkitAudioContext;
+      if (AudioCtx) {
+        audioContext = new AudioCtx();
+        const sourceNode = audioContext.createMediaElementSource(renderVideo);
+        const destNode = audioContext.createMediaStreamDestination();
+        sourceNode.connect(destNode);
+        if (destNode.stream.getAudioTracks().length > 0) {
+          destNode.stream.getAudioTracks().forEach((track) => stream.addTrack(track));
+        }
+      }
+    } catch (err) {
+      console.warn('AudioContext media element capture warning:', err);
+    }
+  }
+
+  const recorder = new MediaRecorder(stream, {
+    mimeType: selectedMime,
+    videoBitsPerSecond: bitrate,
+  });
+
+  const recordedChunks: Blob[] = [];
+  recorder.ondataavailable = (e) => {
+    if (e.data.size > 0) recordedChunks.push(e.data);
+  };
+
   return new Promise(async (resolve, reject) => {
     let animId: number | null = null;
+    let rvfcId: number | null = null;
     let isFinished = false;
 
-    const fallbackCleanup = () => {
+    const cleanup = () => {
       isFinished = true;
       if (animId !== null) cancelAnimationFrame(animId);
-      cleanup();
-    };
-
-    const candidateMimes = [
-      'video/webm;codecs=vp9,opus',
-      'video/webm;codecs=vp8,opus',
-      'video/webm',
-      'video/mp4',
-    ];
-
-    let selectedMime = 'video/webm';
-    let targetExtension: 'mp4' | 'webm' = 'webm';
-
-    for (const mime of candidateMimes) {
-      if (MediaRecorder.isTypeSupported(mime)) {
-        selectedMime = mime;
-        targetExtension = mime.startsWith('video/mp4') ? 'mp4' : 'webm';
-        break;
+      if (rvfcId !== null && 'cancelVideoFrameCallback' in renderVideo) {
+        (renderVideo as any).cancelVideoFrameCallback(rvfcId);
       }
-    }
-
-    const stream = offscreenCanvas.captureStream(fps);
-    const recorder = new MediaRecorder(stream, {
-      mimeType: selectedMime,
-      videoBitsPerSecond: bitrate,
-    });
-
-    const recordedChunks: Blob[] = [];
-    recorder.ondataavailable = (e) => {
-      if (e.data.size > 0) recordedChunks.push(e.data);
+      renderVideo.pause();
+      if (renderVideo.parentNode) {
+        renderVideo.parentNode.removeChild(renderVideo);
+      }
+      if (audioContext && audioContext.state !== 'closed') {
+        audioContext.close().catch(() => {});
+      }
     };
 
     recorder.onstop = async () => {
@@ -290,22 +157,24 @@ export async function exportRenderedVideo(
         const rawBlob = new Blob(recordedChunks, { type: selectedMime });
         let finalBlob = rawBlob;
 
+        // Fix WebM duration metadata so video players (Windows Media Player, VLC, QuickTime) have correct duration and smooth seek
         if (selectedMime.includes('webm') || targetExtension === 'webm') {
           onProgress({
             progress: 99,
             currentFrame: totalFrames,
             totalFrames,
-            status: 'Đang tối ưu hóa duration metadata WebM...',
+            status: 'Đang hoàn thiện metadata thời lượng video...',
           });
+
           try {
             const durationMs = Math.max(1000, Math.round(totalDuration * 1000));
             finalBlob = await fixWebmDuration(rawBlob, durationMs);
           } catch (fixErr) {
-            console.warn('fixWebmDuration error:', fixErr);
+            console.warn('fixWebmDuration error, keeping raw blob:', fixErr);
           }
         }
 
-        fallbackCleanup();
+        cleanup();
 
         onProgress({
           progress: 100,
@@ -320,20 +189,53 @@ export async function exportRenderedVideo(
           extension: targetExtension,
         });
       } catch (err) {
-        fallbackCleanup();
+        cleanup();
         reject(err);
       }
     };
 
     recorder.onerror = (err) => {
-      fallbackCleanup();
+      cleanup();
       reject(err);
     };
 
     try {
-      renderVideo.currentTime = 0;
-      await seekVideoTo(renderVideo, 0);
+      // 1. Wait for video metadata & first frame to be decoded
+      await new Promise<void>((res) => {
+        const timeout = setTimeout(res, 3000);
+        const checkReady = () => {
+          if (renderVideo.readyState >= 2) {
+            clearTimeout(timeout);
+            res();
+          }
+        };
+        renderVideo.addEventListener('loadeddata', checkReady, { once: true });
+        renderVideo.addEventListener('canplay', checkReady, { once: true });
+        renderVideo.load();
+        if (renderVideo.readyState >= 2) {
+          clearTimeout(timeout);
+          res();
+        }
+      });
 
+      renderVideo.currentTime = 0;
+
+      // Wait until seeked to 0
+      await new Promise<void>((res) => {
+        if (renderVideo.currentTime === 0 && renderVideo.readyState >= 2) {
+          res();
+          return;
+        }
+        const onSeeked = () => {
+          renderVideo.removeEventListener('seeked', onSeeked);
+          res();
+        };
+        renderVideo.addEventListener('seeked', onSeeked, { once: true });
+        renderVideo.currentTime = 0;
+        setTimeout(res, 300);
+      });
+
+      // 2. Render initial frame onto canvas before starting recorder
       renderFrame(
         offscreenCtx,
         renderVideo,
@@ -344,10 +246,13 @@ export async function exportRenderedVideo(
         exportH
       );
 
+      // 3. Start MediaRecorder
       recorder.start(100);
+
+      // 4. Start smooth continuous playback
       await renderVideo.play();
 
-      const renderLoop = () => {
+      const drawLoop = () => {
         if (isFinished) return;
 
         const curTime = renderVideo.currentTime;
@@ -367,9 +272,10 @@ export async function exportRenderedVideo(
           progress: progressPct,
           currentFrame: Math.min(totalFrames, Math.round((curTime / totalDuration) * totalFrames)),
           totalFrames,
-          status: `Đang render (${progressPct}%) • ${curTime.toFixed(1)}s / ${totalDuration.toFixed(1)}s`,
+          status: `Đang render tốc độ cao (${progressPct}%) • ${curTime.toFixed(1)}s / ${totalDuration.toFixed(1)}s`,
         });
 
+        // Check if finished
         if (renderVideo.ended || curTime >= totalDuration - 0.05) {
           isFinished = true;
           renderVideo.pause();
@@ -381,15 +287,16 @@ export async function exportRenderedVideo(
           return;
         }
 
-        animId = requestAnimationFrame(renderLoop);
+        animId = requestAnimationFrame(drawLoop);
       };
 
-      animId = requestAnimationFrame(renderLoop);
+      animId = requestAnimationFrame(drawLoop);
     } catch (err) {
-      fallbackCleanup();
+      cleanup();
       reject(err);
     }
   });
 }
+
 
 

@@ -239,7 +239,12 @@ fn save_video_to_disk(
             .encode_utf16()
             .collect();
         let title: Vec<u16> = "Lưu video ghi hình Studio\0".encode_utf16().collect();
-        let def_ext: Vec<u16> = "mp4\0".encode_utf16().collect();
+        let is_webm = default_name.to_lowercase().ends_with(".webm");
+        let def_ext: Vec<u16> = if is_webm {
+            "webm\0".encode_utf16().collect()
+        } else {
+            "mp4\0".encode_utf16().collect()
+        };
 
         let mut ofn = OPENFILENAMEW {
             lStructSize: std::mem::size_of::<OPENFILENAMEW>() as u32,
@@ -248,7 +253,7 @@ fn save_video_to_disk(
             lpstrFilter: filter.as_ptr(),
             lpstrCustomFilter: std::ptr::null_mut(),
             nMaxCustFilter: 0,
-            nFilterIndex: 1,
+            nFilterIndex: if is_webm { 2 } else { 1 },
             lpstrFile: file_buf.as_mut_ptr(),
             nMaxFile: file_buf.len() as u32,
             lpstrFileTitle: std::ptr::null_mut(),
