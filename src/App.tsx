@@ -307,13 +307,13 @@ export default function App() {
       data-theme={theme}
       className="flex flex-col h-screen w-screen overflow-hidden font-sans bg-[var(--bg-app)] text-[var(--text-main)] transition-colors duration-200"
     >
-      {/* Hidden Video Source Element used by Canvas Renderer */}
+      {/* Video Source Element used by Canvas Renderer */}
       {session.videoUrl && (
         <video
           key={session.videoUrl}
           ref={videoRef}
           src={session.videoUrl}
-          className="fixed -top-[9999px] -left-[9999px] opacity-0 pointer-events-none w-1 h-1"
+          className="fixed bottom-0 right-0 w-[640px] h-[360px] opacity-[0.001] pointer-events-none -z-50"
           playsInline
           preload="auto"
           onEnded={() => setSession((s) => ({ ...s, isPlaying: false }))}

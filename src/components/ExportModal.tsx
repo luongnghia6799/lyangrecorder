@@ -41,6 +41,7 @@ export const ExportModal: React.FC<ExportModalProps> = ({
   const [downloadUrl, setDownloadUrl] = useState<string | null>(null);
   const [savedFilePath, setSavedFilePath] = useState<string | null>(null);
   const [isSaving, setIsSaving] = useState(false);
+  const [exportedExt, setExportedExt] = useState<'mp4' | 'webm'>('webm');
 
   // Animation & Resize state
   const [isClosing, setIsClosing] = useState(false);
@@ -57,7 +58,6 @@ export const ExportModal: React.FC<ExportModalProps> = ({
   if (!isOpen) return null;
 
   const handleStartExport = async () => {
-    if (!videoRef.current) return;
     setIsExporting(true);
     setDownloadUrl(null);
     setDownloadBlob(null);
@@ -66,11 +66,11 @@ export const ExportModal: React.FC<ExportModalProps> = ({
       progress: 0,
       currentFrame: 0,
       totalFrames: Math.round((session.duration || 10) * exportSettings.fps),
-      status: 'Đang khởi động luồng render 60 FPS...',
+      status: 'Đang chuẩn bị bộ giải mã khung hình video...',
     });
 
     try {
-      const blob = await exportRenderedVideo(
+      const res = await exportRenderedVideo(
         videoRef.current,
         session,
         settings,
@@ -78,9 +78,10 @@ export const ExportModal: React.FC<ExportModalProps> = ({
         (p) => setProgress(p)
       );
 
-      const url = URL.createObjectURL(blob);
-      setDownloadBlob(blob);
+      const url = URL.createObjectURL(res.blob);
+      setDownloadBlob(res.blob);
       setDownloadUrl(url);
+      setExportedExt(res.extension);
       setIsExporting(false);
     } catch (err) {
       console.error('Export failed:', err);
@@ -213,7 +214,7 @@ export const ExportModal: React.FC<ExportModalProps> = ({
             )}
 
             <button
-              onClick={() => handleSaveVideo(downloadBlob, downloadUrl, `lyang-recorder-${Date.now()}.${exportSettings.format}`)}
+              onClick={() => handleSaveVideo(downloadBlob, downloadUrl, `lyang-recorder-${Date.now()}.${exportedExt}`)}
               disabled={isSaving}
               className="inline-flex items-center justify-center gap-2.5 w-full py-4 rounded-full bg-[var(--accent-primary)] hover:bg-[var(--accent-primary-hover)] text-[var(--accent-primary-text)] font-extrabold text-sm shadow-lg transition-all duration-200 active:scale-95 cursor-pointer disabled:opacity-50"
             >
