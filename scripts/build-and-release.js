@@ -23,7 +23,7 @@ async function main() {
 
     // 2. Build Frontend
     console.log('⚙️  Step 1/4: Building Vite & TypeScript Frontend...');
-    run('npx tsc && npx vite build');
+    run('npm run build:web');
 
     // 3. Build Tauri NSIS Bundle Installer
     console.log('\n⚙️  Step 2/4: Compiling Rust & Packaging Windows NSIS Installer...');
