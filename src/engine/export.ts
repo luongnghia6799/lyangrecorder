@@ -1,3 +1,4 @@
+import { Muxer as Mp4Muxer, ArrayBufferTarget } from 'mp4-muxer';
 import fixWebmDuration from 'fix-webm-duration';
 import { RecordingSession, VideoStyleSettings, ExportSettings } from '../types';
 import { renderFrame, getCanvasDimensions } from './renderer';
@@ -27,7 +28,7 @@ export async function exportRenderedVideo(
     throw new Error('Không tìm thấy nguồn video để xuất.');
   }
 
-  // 1. Determine output canvas dimensions
+  // 1. Determine output canvas dimensions (even dimensions required by H.264)
   const dims = getCanvasDimensions(settings.aspectRatio);
   let scaleFactor = 1;
 
@@ -81,61 +82,200 @@ export async function exportRenderedVideo(
   renderVideo.style.zIndex = '-9999';
   document.body.appendChild(renderVideo);
 
-  // Determine supported mime type based on user-selected format
-  const mp4Mimes = [
-    'video/mp4;codecs=avc1.4d401f,mp4a.40.2',
-    'video/mp4;codecs=avc1',
-    'video/mp4',
-  ];
-  const webmMimes = [
+  // Wait for video element readiness
+  await new Promise<void>((res) => {
+    const timeout = setTimeout(res, 3000);
+    const checkReady = () => {
+      if (renderVideo.readyState >= 2) {
+        clearTimeout(timeout);
+        res();
+      }
+    };
+    renderVideo.addEventListener('loadeddata', checkReady, { once: true });
+    renderVideo.addEventListener('canplay', checkReady, { once: true });
+    renderVideo.load();
+    if (renderVideo.readyState >= 2) {
+      clearTimeout(timeout);
+      res();
+    }
+  });
+
+  renderVideo.currentTime = 0;
+  await new Promise<void>((res) => {
+    if (renderVideo.currentTime === 0 && renderVideo.readyState >= 2) {
+      res();
+      return;
+    }
+    const onSeeked = () => {
+      renderVideo.removeEventListener('seeked', onSeeked);
+      res();
+    };
+    renderVideo.addEventListener('seeked', onSeeked, { once: true });
+    renderVideo.currentTime = 0;
+    setTimeout(res, 300);
+  });
+
+  const isWebCodecsSupported = typeof window !== 'undefined' && 'VideoEncoder' in window && 'VideoFrame' in window;
+
+  // =========================================================================
+  // PIPELINE A: Standard FastStart MP4 via WebCodecs VideoEncoder + mp4-muxer
+  // =========================================================================
+  if (exportSettings.format === 'mp4' && isWebCodecsSupported) {
+    try {
+      const muxer = new Mp4Muxer({
+        target: new ArrayBufferTarget(),
+        video: {
+          codec: 'avc',
+          width: exportW,
+          height: exportH,
+        },
+        fastStart: 'in-memory',
+      });
+
+      let encodeError: any = null;
+      const videoEncoder = new VideoEncoder({
+        output: (chunk, meta) => muxer.addVideoChunk(chunk, meta),
+        error: (e) => {
+          console.error('VideoEncoder error:', e);
+          encodeError = e;
+        },
+      });
+
+      await videoEncoder.configure({
+        codec: 'avc1.4d002a', // H.264 High Profile Level 4.2
+        width: exportW,
+        height: exportH,
+        bitrate: bitrate,
+        framerate: fps,
+        hardwareAcceleration: 'prefer-hardware',
+      });
+
+      // Render frame 0
+      renderFrame(offscreenCtx, renderVideo, session, settings, 0, exportW, exportH);
+
+      await renderVideo.play();
+
+      return await new Promise<ExportResult>((resolve, reject) => {
+        let animId: number | null = null;
+        let isFinished = false;
+        let frameCount = 0;
+        let lastTimestampUs = -1;
+
+        const cleanup = () => {
+          isFinished = true;
+          if (animId !== null) cancelAnimationFrame(animId);
+          renderVideo.pause();
+          if (renderVideo.parentNode) {
+            renderVideo.parentNode.removeChild(renderVideo);
+          }
+        };
+
+        const renderLoop = async () => {
+          if (isFinished) return;
+
+          if (encodeError) {
+            cleanup();
+            reject(encodeError);
+            return;
+          }
+
+          const curTime = renderVideo.currentTime;
+          frameCount++;
+
+          // Draw visual composition onto offscreen canvas
+          renderFrame(offscreenCtx, renderVideo, session, settings, curTime, exportW, exportH);
+
+          // Timestamp in microseconds
+          const timestampUs = Math.round(curTime * 1_000_000);
+          if (timestampUs > lastTimestampUs) {
+            lastTimestampUs = timestampUs;
+            const frame = new VideoFrame(offscreenCanvas, { timestamp: timestampUs });
+            const isKeyFrame = frameCount % (fps * 2) === 0 || frameCount === 1;
+            videoEncoder.encode(frame, { keyFrame: isKeyFrame });
+            frame.close();
+          }
+
+          const progressPct = Math.min(99, Math.round((curTime / totalDuration) * 100));
+          onProgress({
+            progress: progressPct,
+            currentFrame: Math.min(totalFrames, Math.round((curTime / totalDuration) * totalFrames)),
+            totalFrames,
+            status: `Đang xuất MP4 siêu nét 60 FPS (${progressPct}%) • ${curTime.toFixed(1)}s / ${totalDuration.toFixed(1)}s`,
+          });
+
+          // Finished condition
+          if (renderVideo.ended || curTime >= totalDuration - 0.05) {
+            isFinished = true;
+            renderVideo.pause();
+
+            try {
+              onProgress({
+                progress: 99,
+                currentFrame: totalFrames,
+                totalFrames,
+                status: 'Đang đóng gói file MP4 FastStart...',
+              });
+
+              await videoEncoder.flush();
+              videoEncoder.close();
+              muxer.finalize();
+              cleanup();
+
+              const mp4Blob = new Blob([muxer.target.buffer], { type: 'video/mp4' });
+
+              onProgress({
+                progress: 100,
+                currentFrame: totalFrames,
+                totalFrames,
+                status: 'Xuất video hoàn tất 100%! Sẵn sàng tải về 🎉',
+              });
+
+              resolve({
+                blob: mp4Blob,
+                mimeType: 'video/mp4',
+                extension: 'mp4',
+              });
+            } catch (err) {
+              cleanup();
+              reject(err);
+            }
+            return;
+          }
+
+          animId = requestAnimationFrame(renderLoop);
+        };
+
+        animId = requestAnimationFrame(renderLoop);
+      });
+    } catch (mp4MuxerErr) {
+      console.warn('WebCodecs MP4 muxer failed, falling back to MediaRecorder:', mp4MuxerErr);
+    }
+  }
+
+  // =========================================================================
+  // PIPELINE B: WebM / MediaRecorder Fallback with fixWebmDuration
+  // =========================================================================
+  const candidateMimes = [
     'video/webm;codecs=vp9,opus',
     'video/webm;codecs=vp8,opus',
     'video/webm',
+    'video/mp4;codecs=avc1',
+    'video/mp4',
   ];
 
   let selectedMime = 'video/webm';
   let targetExtension: 'mp4' | 'webm' = 'webm';
 
-  if (exportSettings.format === 'mp4') {
-    for (const mime of mp4Mimes) {
-      if (MediaRecorder.isTypeSupported(mime)) {
-        selectedMime = mime;
-        targetExtension = 'mp4';
-        break;
-      }
-    }
-    // If browser doesn't support MP4 MediaRecorder, fallback to WebM
-    if (targetExtension !== 'mp4') {
-      for (const mime of webmMimes) {
-        if (MediaRecorder.isTypeSupported(mime)) {
-          selectedMime = mime;
-          targetExtension = 'webm';
-          break;
-        }
-      }
-    }
-  } else {
-    for (const mime of webmMimes) {
-      if (MediaRecorder.isTypeSupported(mime)) {
-        selectedMime = mime;
-        targetExtension = 'webm';
-        break;
-      }
-    }
-    if (targetExtension !== 'webm') {
-      for (const mime of mp4Mimes) {
-        if (MediaRecorder.isTypeSupported(mime)) {
-          selectedMime = mime;
-          targetExtension = 'mp4';
-          break;
-        }
-      }
+  for (const mime of candidateMimes) {
+    if (MediaRecorder.isTypeSupported(mime)) {
+      selectedMime = mime;
+      targetExtension = mime.startsWith('video/mp4') ? 'mp4' : 'webm';
+      break;
     }
   }
 
   const stream = offscreenCanvas.captureStream(fps);
 
-  // Hook up audio track if video has sound
   let audioContext: AudioContext | null = null;
   if (!settings.muteAudio) {
     try {
@@ -150,7 +290,7 @@ export async function exportRenderedVideo(
         }
       }
     } catch (err) {
-      console.warn('AudioContext media element capture warning:', err);
+      console.warn('AudioContext warning:', err);
     }
   }
 
@@ -166,15 +306,11 @@ export async function exportRenderedVideo(
 
   return new Promise(async (resolve, reject) => {
     let animId: number | null = null;
-    let rvfcId: number | null = null;
     let isFinished = false;
 
     const cleanup = () => {
       isFinished = true;
       if (animId !== null) cancelAnimationFrame(animId);
-      if (rvfcId !== null && 'cancelVideoFrameCallback' in renderVideo) {
-        (renderVideo as any).cancelVideoFrameCallback(rvfcId);
-      }
       renderVideo.pause();
       if (renderVideo.parentNode) {
         renderVideo.parentNode.removeChild(renderVideo);
@@ -189,20 +325,19 @@ export async function exportRenderedVideo(
         const rawBlob = new Blob(recordedChunks, { type: selectedMime });
         let finalBlob = rawBlob;
 
-        // Fix WebM duration metadata so video players (Windows Media Player, VLC, QuickTime) have correct duration and smooth seek
         if (selectedMime.includes('webm') || targetExtension === 'webm') {
           onProgress({
             progress: 99,
             currentFrame: totalFrames,
             totalFrames,
-            status: 'Đang hoàn thiện metadata thời lượng video...',
+            status: 'Đang vá metadata thời lượng video...',
           });
 
           try {
             const durationMs = Math.max(1000, Math.round(totalDuration * 1000));
             finalBlob = await fixWebmDuration(rawBlob, durationMs);
           } catch (fixErr) {
-            console.warn('fixWebmDuration error, keeping raw blob:', fixErr);
+            console.warn('fixWebmDuration error:', fixErr);
           }
         }
 
@@ -232,56 +367,8 @@ export async function exportRenderedVideo(
     };
 
     try {
-      // 1. Wait for video metadata & first frame to be decoded
-      await new Promise<void>((res) => {
-        const timeout = setTimeout(res, 3000);
-        const checkReady = () => {
-          if (renderVideo.readyState >= 2) {
-            clearTimeout(timeout);
-            res();
-          }
-        };
-        renderVideo.addEventListener('loadeddata', checkReady, { once: true });
-        renderVideo.addEventListener('canplay', checkReady, { once: true });
-        renderVideo.load();
-        if (renderVideo.readyState >= 2) {
-          clearTimeout(timeout);
-          res();
-        }
-      });
-
-      renderVideo.currentTime = 0;
-
-      // Wait until seeked to 0
-      await new Promise<void>((res) => {
-        if (renderVideo.currentTime === 0 && renderVideo.readyState >= 2) {
-          res();
-          return;
-        }
-        const onSeeked = () => {
-          renderVideo.removeEventListener('seeked', onSeeked);
-          res();
-        };
-        renderVideo.addEventListener('seeked', onSeeked, { once: true });
-        renderVideo.currentTime = 0;
-        setTimeout(res, 300);
-      });
-
-      // 2. Render initial frame onto canvas before starting recorder
-      renderFrame(
-        offscreenCtx,
-        renderVideo,
-        session,
-        settings,
-        0,
-        exportW,
-        exportH
-      );
-
-      // 3. Start MediaRecorder
+      renderFrame(offscreenCtx, renderVideo, session, settings, 0, exportW, exportH);
       recorder.start(100);
-
-      // 4. Start smooth continuous playback
       await renderVideo.play();
 
       const drawLoop = () => {
@@ -289,25 +376,16 @@ export async function exportRenderedVideo(
 
         const curTime = renderVideo.currentTime;
 
-        renderFrame(
-          offscreenCtx,
-          renderVideo,
-          session,
-          settings,
-          curTime,
-          exportW,
-          exportH
-        );
+        renderFrame(offscreenCtx, renderVideo, session, settings, curTime, exportW, exportH);
 
         const progressPct = Math.min(99, Math.round((curTime / totalDuration) * 100));
         onProgress({
           progress: progressPct,
           currentFrame: Math.min(totalFrames, Math.round((curTime / totalDuration) * totalFrames)),
           totalFrames,
-          status: `Đang render tốc độ cao (${progressPct}%) • ${curTime.toFixed(1)}s / ${totalDuration.toFixed(1)}s`,
+          status: `Đang render (${progressPct}%) • ${curTime.toFixed(1)}s / ${totalDuration.toFixed(1)}s`,
         });
 
-        // Check if finished
         if (renderVideo.ended || curTime >= totalDuration - 0.05) {
           isFinished = true;
           renderVideo.pause();
@@ -329,6 +407,7 @@ export async function exportRenderedVideo(
     }
   });
 }
+
 
 
 
