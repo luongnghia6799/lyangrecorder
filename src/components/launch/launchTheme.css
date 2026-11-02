@@ -1,0 +1,19 @@
+.launch-theme {
+	--launch-surface: #FFFFFF;
+	--launch-panel: #FFFFFF;
+	--launch-border: #E8DED3;
+	--launch-border-strong: #E2D6C7;
+	--launch-text: #1C1917;
+	--launch-text-muted: #78716C;
+	--launch-label: #78716C;
+	--launch-hover: #FAF6F0;
+	--launch-selected: #E8F5E9;
+	--launch-accent: #0D5C3A;
+	--launch-accent-soft: #E8F5E9;
+	--launch-bar-bg: #FFFFFF;
+	--launch-bar-border: #E8DED3;
+	--launch-bar-shadow: 0 16px 36px -6px rgba(100, 70, 40, 0.16), 0 0 0 1px rgba(232, 222, 211, 0.9);
+	color: var(--launch-text);
+	backdrop-filter: blur(24px);
+	-webkit-backdrop-filter: blur(24px);
+}

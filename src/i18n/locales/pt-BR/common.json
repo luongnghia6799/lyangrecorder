@@ -1,0 +1,26 @@
+﻿{
+    "app":  {
+                "name":  "LyangRecorder",
+                "editorTitle":  "LyangRecorder",
+                "subtitle":  "GravaÃ§Ã£o e ediÃ§Ã£o de tela",
+                "language":  "Idioma",
+                "manageRecordings":  "Abrir pasta de gravaÃ§Ãµes"
+            },
+    "actions":  {
+                    "cancel":  "Cancelar",
+                    "close":  "Fechar",
+                    "export":  "Exportar",
+                    "load":  "Carregar",
+                    "redo":  "Refazer",
+                    "reset":  "Redefinir",
+                    "save":  "Salvar",
+                    "undo":  "Desfazer",
+                    "delete":  "Excluir",
+                    "done":  "ConcluÃ­do"
+                },
+    "errors":  {
+                   "invalidFileType":  "Tipo de arquivo invÃ¡lido",
+                   "failedToUploadImage":  "Falha ao enviar imagem",
+                   "fileReadError":  "Ocorreu um erro ao ler o arquivo."
+               }
+}

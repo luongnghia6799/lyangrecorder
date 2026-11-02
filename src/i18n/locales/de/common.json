@@ -1,0 +1,26 @@
+﻿{
+    "app":  {
+                "name":  "LyangRecorder",
+                "editorTitle":  "LyangRecorder",
+                "subtitle":  "Bildschirmaufzeichnung und -bearbeitung",
+                "language":  "Sprache",
+                "manageRecordings":  "Aufzeichnungsordner Ã¶ffnen"
+            },
+    "actions":  {
+                    "cancel":  "Abbrechen",
+                    "close":  "SchlieÃŸen",
+                    "export":  "Exportieren",
+                    "load":  "Laden",
+                    "redo":  "Wiederherstellen",
+                    "reset":  "ZurÃ¼cksetzen",
+                    "save":  "Speichern",
+                    "undo":  "RÃ¼ckgÃ¤ngig",
+                    "delete":  "LÃ¶schen",
+                    "done":  "Fertig"
+                },
+    "errors":  {
+                   "invalidFileType":  "UngÃ¼ltiger Dateityp",
+                   "failedToUploadImage":  "Bild konnte nicht hochgeladen werden",
+                   "fileReadError":  "Beim Lesen der Datei ist ein Fehler aufgetreten."
+               }
+}

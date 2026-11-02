@@ -1,0 +1,42 @@
+{
+	"zoom": {
+		"cannotPlace": "Không thể đặt vùng zoom tại đây",
+		"existsOrNoSpace": "Đã có vùng zoom tại vị trí này hoặc không đủ khoảng trống.",
+		"suggestHandlerUnavailable": "Tính năng gợi ý zoom hiện không khả dụng",
+		"noTelemetry": "Không có dữ liệu chuyển động chuột",
+		"recordFirst": "Hãy ghi hình với chuột di chuyển để tạo gợi ý zoom tự động.",
+		"noUsableTelemetry": "Dữ liệu chuột không đủ để phân tích",
+		"notEnoughMovement": "Bản ghi không có đủ thao tác chuột cần thiết.",
+		"noInteractionMoments": "Không tìm thấy thời điểm tương tác rõ ràng",
+		"tryRecording": "Hãy thử quay lại và nhấn hoặc dừng nhẹ quanh các hành động quan trọng.",
+		"noAutoZoomSlots": "Không còn vị trí trống để zoom tự động",
+		"dwellPointsOverlap": "Các điểm dừng bị trùng lặp với vùng zoom đã có sẵn.",
+		"addedSuggestions": "Đã thêm {{count}} gợi ý zoom tự động",
+		"label": "Zoom {{index}}",
+		"addZoom": "Thêm Zoom (Z)",
+		"suggestZooms": "Gợi ý Zoom từ thao tác chuột"
+	},
+	"trim": {
+		"cannotPlace": "Không thể cắt tại đây",
+		"existsOrNoSpace": "Đã có vùng cắt tại vị trí này hoặc không đủ khoảng trống.",
+		"label": "Đoạn cắt {{index}}",
+		"addTrim": "Thêm đoạn cắt (T)"
+	},
+	"speed": {
+		"cannotPlace": "Không thể đổi tốc độ tại đây",
+		"existsOrNoSpace": "Đã có vùng tốc độ tại vị trí này hoặc không đủ khoảng trống.",
+		"label": "Tốc độ",
+		"addSpeed": "Thêm tốc độ (S)"
+	},
+	"annotation": {
+		"label": "Chú thích",
+		"image": "Hình ảnh",
+		"addAnnotation": "Thêm chú thích (A)"
+	},
+	"audio": {
+		"label": "Âm thanh"
+	},
+	"addSpeed": "Thêm tốc độ (S)",
+	"resizeLeft": "Kéo dài sang trái",
+	"resizeRight": "Kéo dài sang phải"
+}

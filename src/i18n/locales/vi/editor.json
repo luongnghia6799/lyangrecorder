@@ -1,0 +1,202 @@
+{
+	"cloud": {
+		"signInRequired": "Đăng nhập trước khi tạo liên kết chia sẻ.",
+		"prepareFailed": "Không thể chuẩn bị bản chỉnh sửa hiện tại để chia sẻ.",
+		"uploadFailed": "Tải lên đám mây thất bại.",
+		"linkCreated": "Đã tạo liên kết chia sẻ",
+		"linkCopied": "Đã sao chép liên kết",
+		"copyFailed": "Không thể sao chép liên kết. Hãy chọn và sao chép thủ công.",
+		"copied": "Đã sao chép",
+		"copy": "Sao chép",
+		"preparing": "Đang chuẩn bị video…",
+		"createLink": "Tạo liên kết",
+		"heading": "Chia sẻ lên đám mây",
+		"ready": "Video của bạn đã sẵn sàng để chia sẻ.",
+		"openPage": "Mở trang chia sẻ",
+		"notes": "Ghi chú",
+		"publish": "Xuất bản và tạo link",
+		"createLinkTitle": "Tạo liên kết chia sẻ",
+		"notesPlaceholder": "Thêm ngữ cảnh, hướng dẫn hoặc tóm tắt ngắn cho người xem…",
+		"description": "Xuất bản bản chỉnh sửa hiện tại lên trang xem và phản hồi trực tuyến mà không cần tải file về. Video hỗ trợ độ phân giải lên đến 1080p.",
+		"uploading": "Đang tải lên… {progress}%",
+		"googleUnavailable": "Đăng nhập Google hiện chưa khả dụng. Hãy dùng email.",
+		"xUnavailable": "Đăng nhập X hiện chưa khả dụng. Hãy dùng email.",
+		"providerUnavailable": "Phương thức đăng nhập này chưa hỗ trợ. Hãy dùng email.",
+		"enterEmail": "Vui lòng nhập địa chỉ email trước.",
+		"resetSent": "Đã gửi email đặt lại mật khẩu.",
+		"accountHeading": "Tài khoản của bạn",
+		"signInHeading": "Đăng nhập",
+		"signInShareDescription": "Đăng nhập để xuất bản video này và quản lý liên kết chia sẻ.",
+		"signInDescription": "Truy cập các bản ghi và liên kết chia sẻ của bạn.",
+		"signingOut": "Đang đăng xuất…",
+		"signOut": "Đăng xuất",
+		"signingIn": "Đang đăng nhập…",
+		"signIn": "Đăng nhập",
+		"or": "hoặc",
+		"email": "Email",
+		"password": "Mật khẩu",
+		"forgotPassword": "Quên mật khẩu?",
+		"unavailable": "Tính năng lưu đám mây chưa khả dụng trong bản này. Bạn có thể lưu video trực tiếp trên máy tính.",
+		"createShareLink": "Tạo liên kết chia sẻ",
+		"done": "Xong",
+		"addingVideo": "Đang thêm video…",
+		"preparingFootage": "Đang chuẩn bị hình ảnh và âm thanh cho dòng thời gian."
+	},
+	"library": {
+		"videos": "Video"
+	},
+	"playback": {
+		"play": "Phát",
+		"pause": "Tạm dừng",
+		"skipBack": "Lùi lại",
+		"skipForward": "Tua tới",
+		"muteUnmute": "Bật/Tắt tiếng",
+		"volume": "Âm lượng xem trước"
+	},
+	"annotations": {
+		"settings": "Cài đặt chú thích",
+		"active": "Đang chọn",
+		"text": "Văn bản",
+		"image": "Hình ảnh",
+		"arrow": "Mũi tên",
+		"blur": "Làm mờ",
+		"textContent": "Nội dung văn bản",
+		"textPlaceholder": "Nhập văn bản của bạn...",
+		"fontStyle": "Kiểu chữ",
+		"selectStyle": "Chọn kiểu chữ",
+		"size": "Kích cỡ",
+		"toggleBold": "In đậm",
+		"toggleItalic": "In nghiêng",
+		"toggleUnderline": "Gạch chân",
+		"alignLeft": "Căn trái",
+		"alignCenter": "Căn giữa",
+		"alignRight": "Căn phải",
+		"textColor": "Màu chữ",
+		"background": "Màu nền",
+		"none": "Không có",
+		"clearBackground": "Xóa màu nền",
+		"uploadImage": "Tải ảnh lên",
+		"supportedFormats": "Định dạng hỗ trợ: JPG, PNG, GIF, WebP",
+		"arrowDirection": "Hướng mũi tên",
+		"strokeWidth": "Độ dày nét: {{width}}px",
+		"arrowColor": "Màu mũi tên",
+		"deleteAnnotation": "Xóa chú thích",
+		"shortcutsAndTips": "Phím tắt & Mẹo",
+		"tipSelectAnnotation": "Di chuyển đầu đọc đến đoạn chú thích để chọn phần tử.",
+		"tipCycleForward": "Dùng Tab để chuyển qua các phần tử đè lên nhau.",
+		"tipCycleBackward": "Dùng Shift+Tab để chuyển ngược lại.",
+		"imageUploadSuccess": "Đã tải ảnh lên thành công!",
+		"imageUploadError": "Vui lòng chọn tệp ảnh định dạng JPG, PNG, GIF hoặc WebP.",
+		"blurStrength": "Độ mờ: {{strength}}",
+		"solidColor": "Màu che (Kiểm duyệt)",
+		"borderRadius": "Bo góc"
+	},
+	"fontStyles": {
+		"classic": "Cổ điển",
+		"editor": "Biên tập",
+		"strong": "Đậm nét",
+		"typewriter": "Máy đánh chữ",
+		"deco": "Nghệ thuật",
+		"simple": "Đơn giản",
+		"modern": "Hiện đại",
+		"clean": "Tinh gọn"
+	},
+	"format": {
+		"mp4Video": "Video MP4",
+		"mp4Description": "Tệp video chất lượng cao",
+		"gifAnimation": "Ảnh động GIF",
+		"gifDescription": "Ảnh động thuận tiện chia sẻ"
+	},
+	"gifOptions": {
+		"frameRate": "Khung hình/giây",
+		"outputSize": "Kích thước xuất",
+		"outputDimensions": "Đầu ra: {{width}} × {{height}}px",
+		"loopAnimation": "Lặp lại",
+		"loopDescription": "GIF sẽ lặp lại liên tục"
+	},
+	"tutorial": {
+		"howTrimmingWorks": "Cách cắt bớt video",
+		"title": "Cách cắt đoạn thừa trong video",
+		"understanding": "Tìm hiểu cách cắt bỏ các đoạn không mong muốn trong bản ghi.",
+		"descriptionP1": "Công cụ Cắt hoạt động bằng cách đánh dấu các đoạn bạn muốn",
+		"descriptionRemove": "xóa bỏ",
+		"descriptionP2": "khỏi video.",
+		"descriptionP3": "Bất kỳ đoạn nào trên dòng thời gian được bọc trong màu đỏ sẽ bị loại bỏ khi xuất video.",
+		"visualExample": "Ví dụ minh họa",
+		"removed": "ĐÃ CẮT BỎ",
+		"kept": "Giữ lại",
+		"finalVideo": "Video hoàn thiện",
+		"part": "Phần {{number}}",
+		"addTrimStep": "1. Thêm đoạn cắt",
+		"addTrimDesc": "Nhấn phím T hoặc bấm biểu tượng kéo để đánh dấu đoạn cần cắt.",
+		"adjustStep": "2. Điều chỉnh",
+		"adjustDesc": "Kéo các mép vùng màu đỏ để bao phủ chính xác đoạn cần loại bỏ."
+	},
+	"feedback": {
+		"trigger": "Phản hồi",
+		"title": "Phản hồi & Liên hệ",
+		"description": "Gửi phản hồi hoặc báo lỗi để hoàn thiện sản phẩm.",
+		"emailLabel": "Email",
+		"xLabel": "X",
+		"reportIssue": "Báo lỗi / Góp ý",
+		"openFailed": "Không thể mở liên kết."
+	},
+	"keyboardShortcuts": {
+		"trigger": "Phím tắt",
+		"title": "Phím tắt bàn phím",
+		"description": "Tham khảo nhanh các phím điều khiển dòng thời gian và trình biên tập.",
+		"customizeTooltip": "Tùy chỉnh phím tắt",
+		"customize": "Tùy chỉnh",
+		"panTimeline": "Di chuyển dòng thời gian",
+		"zoomTimeline": "Phóng to dòng thời gian",
+		"cycleAnnotations": "Chuyển chú thích",
+		"tab": "Tab"
+	},
+	"actions": {
+		"saveAgain": "Lưu lại",
+		"showInFolder": "Mở thư mục"
+	},
+	"project": {
+		"untitled": "Chưa đặt tên",
+		"unsavedChangesTitle": "Thay đổi chưa lưu",
+		"unsavedChangesDescription": "Lưu dự án hiện tại trước khi bạn {{action}}?",
+		"discardChanges": "Bỏ qua thay đổi",
+		"saveProject": "Lưu dự án"
+	},
+	"exportTips": {
+		"autoZooms": "Mẹo: Tắt tự động phóng to (auto-zoom) trong cài đặt",
+		"experimentalBuilds": "Mẹo: Bật cập nhật thử nghiệm trong cài đặt",
+		"cursorAppearance": "Mẹo: Bạn có thể tùy biến kiểu dáng con trỏ chuột"
+	},
+	"account": { "title": "Tài khoản", "comingSoon": "Sắp ra mắt" },
+	"nativeCaptureUnavailable": {
+		"title": "Thiết bị không hỗ trợ ghi hình tự nhiên mượt mà.",
+		"description": "Thiết bị của bạn không hỗ trợ bộ ghi phần cứng tối ưu. Ứng dụng vẫn hoạt động bình thường, nhưng hiệu ứng làm mượt con trỏ sẽ không khả dụng.",
+		"confirm": "Đã hiểu"
+	},
+	"exportStatus": {
+		"exporting": "Đang xuất",
+		"renderingFile": "Đang dựng video của bạn.",
+		"preparing": "Đang chuẩn bị xuất...",
+		"completePercent": "Đã hoàn thành {{percent}}%",
+		"issue": "Lỗi xuất tệp",
+		"complete": "Xuất tệp thành công",
+		"savedSuccessfully": "Tệp đã được lưu thành công vào máy tính.",
+		"errorCopied": "Đã sao chép lỗi",
+		"errorCopyFailed": "Không thể sao chép.",
+		"copyError": "Sao chép lỗi",
+		"failed": "Xuất video thất bại"
+	},
+	"export": {
+		"processingAudioEdits": "Đang xử lý âm thanh và tốc độ phát"
+	},
+	"toolbar": {
+		"addLayer": "Thêm lớp",
+		"splitClip": "Tách đoạn (C)"
+	},
+	"timeline": {
+		"expand": "Mở rộng dòng thời gian",
+		"collapse": "Thu gọn dòng thời gian"
+	},
+	"openRecordingsFolder": "Mở thư mục video"
+}

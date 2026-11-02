@@ -1,0 +1,26 @@
+{
+	"app": {
+		"name": "LyangRecorder",
+		"editorTitle": "LyangRecorder",
+		"subtitle": "Quay màn hình và biên tập video chuyên nghiệp",
+		"language": "Ngôn ngữ",
+		"manageRecordings": "Mở thư mục video"
+	},
+	"actions": {
+		"cancel": "Hủy",
+		"close": "Đóng",
+		"export": "Xuất video",
+		"load": "Mở tệp",
+		"redo": "Làm lại",
+		"reset": "Đặt lại",
+		"save": "Lưu",
+		"undo": "Hoàn tác",
+		"delete": "Xóa",
+		"done": "Xong"
+	},
+	"errors": {
+		"invalidFileType": "Định dạng tệp không hợp lệ",
+		"failedToUploadImage": "Tải ảnh lên thất bại",
+		"fileReadError": "Lỗi khi đọc tệp dữ liệu."
+	}
+}

@@ -1,0 +1,26 @@
+﻿{
+    "app":  {
+                "name":  "LyangRecorder",
+                "editorTitle":  "LyangRecorder",
+                "subtitle":  "èž¢å¹•éŒ„è£½èˆ‡ç·¨è¼¯",
+                "language":  "èªžè¨€",
+                "manageRecordings":  "æ‰“é–‹éŒ„è£½å½±åƒæ–‡ä»¶å¤¾"
+            },
+    "actions":  {
+                    "cancel":  "å–æ¶ˆ",
+                    "close":  "é—œé–‰",
+                    "export":  "å°Žå‡º",
+                    "load":  "è®€å–",
+                    "redo":  "é‡åš",
+                    "reset":  "é‡ç½®",
+                    "save":  "ä¿å­˜",
+                    "undo":  "æ’¤éŠ·",
+                    "delete":  "åˆªé™¤",
+                    "done":  "å®Œæˆ"
+                },
+    "errors":  {
+                   "invalidFileType":  "ç„¡æ•ˆçš„æª”æ¡ˆé¡žåž‹",
+                   "failedToUploadImage":  "ä¸Šå‚³åœ–ç‰‡å¤±æ•—",
+                   "fileReadError":  "è®€å–æª”æ¡ˆæ™‚å‡ºéŒ¯ã€‚"
+               }
+}
